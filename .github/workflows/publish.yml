@@ -1,6 +1,7 @@
 name: Publish to npm
 
 # 代码推到 main 即自动发版；也可在 Actions 页面手动触发并指定递增方式。
+# 只监听影响 npm 包产物的路径：改文档 / skill 说明不该触发发版。
 on:
   push:
     branches: [main]
@@ -10,7 +11,6 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'tsconfig.json'
-      - 'README.md'
   workflow_dispatch:
     inputs:
       bump:
