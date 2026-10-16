@@ -229,12 +229,40 @@ siyuan notify push --msg "同步完成" --timeout 5000
 
 ### 首次启用
 
+#### 1. 生成 npm token
+
+登录 <https://www.npmjs.com> → 右上角头像 → **Access Tokens** → **Generate New Token**，按下面填：
+
+| 项 | 填什么 | 为什么 |
+| --- | --- | --- |
+| Token name | `siyuan-note-cli-gh-actions` | 便于以后辨认与吊销 |
+| **Bypass two-factor authentication** | ✅ 勾上 | CI 里没法交互输 OTP，不勾发布会失败 |
+| **Packages and scopes → Permissions** | **Read and write (publish and stage)** | 选 `stage only` 只会暂存、不会真正发布 |
+| Packages and scopes → Select packages | `Only select packages and scopes` → 选 `@aigood` | 最小权限，只给这一个 scope |
+| **Allowed IP Ranges** | **留空** | GitHub Actions 的出口 IP 是动态的，填了必失败 |
+| Expiration | 选最长的（或 Custom） | 过期后发布会 401，记得提前轮换 |
+
+点 **Generate Token** 后**立刻复制**——完整 token 只在这一次显示，之后只能看到首尾各 4 位。
+
+> 若你的 npm 用户名本身就是 `aigood`，scope 直接可用；不是的话先到
+> <https://www.npmjs.com/org/create> 建一个名为 `aigood` 的免费 org，再回来生成 token。
+
+#### 2. 配到 GitHub
+
 ```bash
-# 在 npmjs.com → Access Tokens 生成 Automation 类型 token，然后：
-gh secret set NPM_TOKEN -b '<your-npm-token>'
+gh secret set NPM_TOKEN -b '<刚才复制的 token>'
+gh secret list          # 确认 NPM_TOKEN 已出现
 ```
 
 `NPM_TOKEN` 未配置时，发布工作流会直接失败并在日志里给出上述命令，不会静默跳过。
+
+#### 3. 触发首次发布
+
+```bash
+gh workflow run publish.yml -f bump=patch
+gh run watch            # 看实时日志
+npm view @aigood/siyuan-note-cli version   # 发布成功后验证
+```
 
 包名是 scoped 包 `@aigood/siyuan-note-cli`，`publishConfig.access` 已设为 `public`，install 时用：
 
