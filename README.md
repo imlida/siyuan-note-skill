@@ -1,9 +1,9 @@
-# @imlida/siyuan-note-cli
+# @aigood/siyuan-note-cli
 
 思源笔记（SiYuan）API 的命令行客户端。把 [官方 API 文档](https://github.com/siyuan-note/siyuan/blob/master/docs/API.zh-CN.md) 中的**全部 80 个接口**逐个实现为子命令，面向脚本与 Agent 调用设计：结构化输出、明确的退出码、可注入的鉴权配置。
 
 ```bash
-npx @imlida/siyuan-note-cli notebook ls
+npx @aigood/siyuan-note-cli notebook ls
 ```
 
 ---
@@ -20,10 +20,10 @@ npx @imlida/siyuan-note-cli notebook ls
 
 ```bash
 # 免安装
-npx @imlida/siyuan-note-cli system version --api-url http://127.0.0.1:6806
+npx @aigood/siyuan-note-cli system version --api-url http://127.0.0.1:6806
 
 # 全局安装（提供 siyuan 与 siyuan-note-cli 两个命令）
-npm install -g @imlida/siyuan-note-cli
+npm install -g @aigood/siyuan-note-cli
 siyuan notebook ls
 
 # 本地开发
@@ -236,11 +236,16 @@ gh secret set NPM_TOKEN -b '<your-npm-token>'
 
 `NPM_TOKEN` 未配置时，发布工作流会直接失败并在日志里给出上述命令，不会静默跳过。
 
-包名是 scoped 包 `@imlida/siyuan-note-cli`，`publishConfig.access` 已设为 `public`，install 时用：
+包名是 scoped 包 `@aigood/siyuan-note-cli`，`publishConfig.access` 已设为 `public`，install 时用：
 
 ```bash
-npm i -g @imlida/siyuan-note-cli
+npm i -g @aigood/siyuan-note-cli
 ```
+
+> **首次发布 scoped 包的前提**：npm 要求 scope 对应一个你所属的 org。若 `npm publish` 报
+> `404 Scope not found` 或 `403 You do not have permission to publish "@aigood/..."`，
+> 先到 <https://www.npmjs.com/org/create> 建一个名为 `aigood` 的免费 org（把 token 所属账号加进去），
+> 之后即可正常发布。
 
 ## 开发
 
