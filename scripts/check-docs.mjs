@@ -41,7 +41,7 @@ for (const e of ENDPOINTS) {
   });
 }
 
-const files = ['README.md', path.join('skill', 'siyuan-note-cli', 'SKILL.md')];
+const files = ['README.md', path.join('skill', 'siyuan-note-skill', 'SKILL.md')];
 let problems = 0;
 let checkedCmds = 0;
 

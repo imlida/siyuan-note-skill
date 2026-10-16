@@ -1,11 +1,11 @@
 ---
-name: siyuan-note-cli
+name: siyuan-note-skill
 description: 通过 @aigood/siyuan-note-cli（siyuan）命令行工具读写思源笔记（SiYuan）。当用户需要搜索/创建/更新/删除思源笔记的笔记本、文档、块、块属性，执行 SQL 查询，上传资源或导入导出文件，操作数据库（属性视图），发送通知，或把思源当作数据库/知识库后端来读写时使用。关键词：思源、SiYuan、siyuan、笔记 API、块 ID、笔记本 ID。
 version: 0.1.0
 license: MIT
 ---
 
-# 思源笔记 CLI（siyuan-note-cli）
+# 思源笔记 Skill（siyuan-note-skill）
 
 把思源笔记的全部 80 个 HTTP API 封装成子命令。所有命令由同一份注册表生成，本文命令与 CLI 实现严格一致。
 
