@@ -247,6 +247,11 @@ siyuan notify push --msg "同步完成" --timeout 5000
 > 若你的 npm 用户名本身就是 `aigood`，scope 直接可用；不是的话先到
 > <https://www.npmjs.com/org/create> 建一个名为 `aigood` 的免费 org，再回来生成 token。
 
+> ⚠️ 最容易踩的一条：**Bypass 2FA 必须勾**。没勾的话发布会得到：
+> `npm error code E403 ... Two-factor authentication or granular access token with
+> bypass 2fa enabled is required to publish packages.`
+> 此时只需重新生成一个勾选了 Bypass 2FA 的 token，不用改任何代码。
+
 #### 2. 配到 GitHub
 
 ```bash
