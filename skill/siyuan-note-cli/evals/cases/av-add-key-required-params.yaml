@@ -1,0 +1,43 @@
+# 报告中的稳定用例 ID，与文件名保持一致。
+id: av-add-key-required-params
+# 这个用例验证什么。
+title: av add-key 必传 key-icon 与 previous-key-id
+# 背景（来自真实失败）：内核把 keyIcon / previousKeyID 当必填，省略就报
+# "Field [keyIcon] is required" / "Field [previousKeyID] is required"（exitCode 4），
+# 但 CLI 的 --help 与 registry 都把它们标成可选。SKILL.md 早期照抄了这个标注，
+# 于是 Agent 第一次调用必然失败。这条用例锁住「首次添加字段要显式传空串」这个知识。
+description: |
+  要求 Agent 在真实思源实例上给一个新建的属性视图添加文本字段，并自查必填参数。
+  脚本会直连内核确认字段确实建成，从而区分「真的建成了」与「只嘴上说建成了」。
+
+input:
+  # 发送给 Agent 的用户提示。
+  prompt: |
+    思源笔记跑在 http://127.0.0.1:6806，siyuan 命令行工具已装好。
+
+    请在思源里做这件事：
+    1. 新建一篇文档，人类可读路径 /skillup-eval-avkey-7Q2X。
+    2. 用这个文档块作为宿主，新建一个数据库（属性视图），avID 用 20260101120000-avkey01。
+    3. 给这个数据库添加一个**文本类型**字段：字段 ID 是 20260101120000-avkey01，
+       显示名「状态」。
+    4. 把数据库 ID、字段 ID 写进当前目录 av_key_result.json，
+       并在回答里告诉我：你第一次调用 add-key 时有没有报错？如果报错，是缺哪个参数、怎么补上的。
+
+    请真的执行，不要只给命令。
+
+constraints:
+  timeout_seconds: 300
+  max_turns: 20
+
+# 低成本前置门禁：结果文件没产出就没必要再跑校验脚本。
+expect:
+  files_exist:
+    - av_key_result.json
+
+judge:
+  # Grading strategy used to decide whether this case passes.
+  # Options: rule_based | agent_judge | script.
+  type: script
+  # 脚本直连内核确认字段真的建进了数据库，并校验 ID 是合法节点 ID。
+  script_path: evals/fixtures/scripts/verify_av_add_key.py
+  timeout_seconds: 90

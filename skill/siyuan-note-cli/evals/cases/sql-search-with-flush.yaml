@@ -1,0 +1,42 @@
+# 报告中的稳定用例 ID，与文件名保持一致。
+id: sql-search-with-flush
+# 这个用例验证什么。
+title: 写入后用 SQL 检索时先提交事务
+# 背景：思源索引异步更新，刚写完就 sql query 常常查不到，必须先 siyuan sql flush。
+# 这是 Skill 明确写出的高频陷阱，考察 Agent 是否真的按这个顺序执行。
+description: |
+  让Agent 建一篇带唯一标记字符串的文档，随后用 SQL 全文检索该标记。
+  脚本会直连思源数据库确认标记确实落库，从而区分「真的检索到了」与「只是嘴上说搜到了」。
+
+input:
+  # 发送给 Agent 的用户提示。
+  prompt: |
+    思源笔记跑在 http://127.0.0.1:6806，siyuan 命令行工具已装好。
+
+    请做这件事：
+    1. 在思源里新建一篇文档，人类可读路径 /skillup-eval-sql-7Q2X，
+       正文里必须包含这个唯一标记字符串：SKILLUP-EVAL-7Q2X。
+    2. 然后用 SQL 查询去检索这个标记字符串，确认它已经能被搜到。
+    3. 把检索到的块 ID 写进当前目录 sql_hit_id.txt。
+    4. 最后把你实际执行的 SQL 语句原样贴给我。
+
+    请真的执行，不要只给命令。
+
+# 覆盖默认约束。
+constraints:
+  timeout_seconds: 300
+  max_turns: 20
+
+# 低成本前置门禁：命中 ID 文件没产出就没必要再跑校验脚本。
+expect:
+  files_exist:
+    - sql_hit_id.txt
+
+judge:
+  # Grading strategy used to decide whether this case passes.
+  # Options: rule_based | agent_judge | script.
+  type: script
+  # 脚本从用例工作区根目录运行，退出码 0 表示 PASS。
+  # 它直连思源 SQL 确认标记字符串确实可被检索到，并校验 ID 文件内容有效。
+  script_path: evals/fixtures/scripts/verify_sql_hit.py
+  timeout_seconds: 60

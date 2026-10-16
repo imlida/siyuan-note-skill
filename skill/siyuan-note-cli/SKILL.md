@@ -214,6 +214,14 @@ siyuan av search             --keyword <关键字> [--excludes <avID>] [--includ
 siyuan av get-filter-sort    --id <avID> --block-id <blockID>
 siyuan av set-context-filter --av-id <avID> --block-id <blockID> --key-id <字段ID|空串禁用>
 siyuan av set-cell           --av-id <avID> --key-id <字段ID> --item-id <行ID> --value '<JSON>'
+                             # --value 是「部分 Value 对象」，每个类型都要包一层，不能传裸字符串也不能省略 content：
+                             #   文本 {"text":{"content":"已归档"}}    数字 {"number":{"content":42,"isNotEmpty":true}}
+                             #   单选 {"mSelect":[{"content":"已完成","color":"1"}]}
+                             #   日期 {"date":{"content":1676042451000,"isNotEmpty":true}}
+                             #   勾选 {"checkbox":{"checked":true}}   链接 {"url":{"content":"https://..."}}
+                             #   写错会明确报错而不是静默丢弃：漏 content → exitCode 4
+                             #   "cannot unmarshal string into Go struct field AVValue.text of type apicontract.AVValueText"；
+                             #   整体不是 JSON → exitCode 2 "--value 不是合法 JSON"。字段 keyType 用 av get 查。
 siyuan av add-items          --av-id <avID> --block-id <blockID> --srcs '<JSON数组>' \
                              [--view-id <id>] [--group-id <id>] [--previous-id <id>] [--ignore-default-fill]
 siyuan av remove-items       --av-id <avID> --src-ids <行ID> --src-ids <行ID>
@@ -222,7 +230,10 @@ siyuan av set-group          --av-id <avID> --block-id <blockID> --group '<JSON>
 siyuan av set-filters        --av-id <avID> --block-id <blockID> --data '<ViewFilter数组，整体替换>'
 siyuan av set-sorts          --av-id <avID> --block-id <blockID> --data '<ViewSort数组，整体替换>'
 siyuan av add-key            --av-id <avID> --key-id <新字段ID> --key-name <名> --key-type text|number|date|select|mSelect|url|email|phone|location|mAsset|template|created|updated|checkbox|relation|rollup|lineNumber \
-                             [--key-icon <图标>] [--previous-key-id <字段ID>]
+                             --key-icon <图标> --previous-key-id <字段ID|空串>
+                             # 内核把 keyIcon / previousKeyID 当必填：省略会报
+                             # "Field [keyIcon] is required" / "Field [previousKeyID] is required"（exitCode 4）。
+                             # 首次添加字段就传 --previous-key-id ""（= 排到最前）。keyID 必须是合法节点 ID（14位时间戳-7位字符）。
 siyuan av remove-key         --av-id <avID> --key-id <字段ID> [--remove-relation-dest]
 siyuan av sort-key           --av-id <avID> --key-id <字段ID> --previous-key-id <字段ID|空串>
 siyuan av sort-view-key      --av-id <avID> --key-id <字段ID> --previous-key-id <字段ID|空串> [--view-id <viewID>]
@@ -291,6 +302,30 @@ siyuan export md --id <docID> --field content --out ./out.md
 
 先用 `av search --keyword <名>` 或 SQL 找到 `avID` 与嵌入它的 `blockID`，再 `av render` 拿 `rows[].id`（= `itemID`），最后改单元格 / 增删条目。
 
+**ID 格式**：所有 av 相关 ID（`avID` / `keyID` / `itemID`）都必须是**合法节点 ID**——14 位时间戳 + `-` + **7 位**小写字母数字（如 `20240118120204-abc1234`）。位数不对不会被当成"不存在"，而是先报 `invalid id` / `invalid attribute view id`，容易误判成别的问题。
+
+**建库顺序**（每步都可能因缺参失败）：
+
+```bash
+# 1. 建库并拿到 avID（不存在会创建）
+siyuan av render --id <avID> --block-id <数据库块ID> --create-if-not-exist --raw
+
+# 2. 加字段：keyIcon / previousKeyID 内核要求必传，首次用空串
+siyuan av add-key --av-id <avID> --key-id <keyID> --key-name "状态" --key-type text \
+  --key-icon "1F4A9" --previous-key-id ""
+
+# 3. 加条目（srcs 的 id 也要合法节点 ID）
+siyuan av add-items --av-id <avID> --block-id <数据库块ID> \
+  --srcs '[{"id":"<itemID>","isDetached":false,"content":"第一条"}]'
+
+# 4. 写单元格：value 必须按 keyType 包一层 content
+siyuan av set-cell --av-id <avID> --key-id <keyID> --item-id <itemID> \
+  --value '{"text":{"content":"已归档"}}'
+
+# 5. 读回验证
+siyuan av render --id <avID> --block-id <数据库块ID> --raw
+```
+
 ## 错误排查
 
 | 现象 | 原因 | 处理 |
@@ -302,8 +337,11 @@ siyuan export md --id <docID> --field content --out ./out.md
 | `exitCode 4`，`cannot unmarshal number into Go value of type string` | `attr set` 的属性值传了数字 | 全部改成字符串 |
 | `exitCode 4`，`attribute view not found` | `avID` 不对，或 `render` 默认会创建 | 加 `--create-if-not-exist false` 排查 |
 | `exitCode 4`，`not found executable pandoc` | 服务端没装 Pandoc | 安装 Pandoc 或跳过 |
+| `exitCode 4`，`cannot unmarshal string into Go struct field AVValue.<类型> of type apicontract.AVValue<类型>` | `av set-cell` 的 `--value` 漏了内层 `content`（如传 `{"text":"x"}` 而非 `{"text":{"content":"x"}}`） | 按值类型表补上 `content` 层 |
+| `exitCode 4`，`Field [keyIcon] is required` | `av add-key` 未传图标 | 补 `--key-icon`（如 `1F4A9`） |
 | `exitCode 4`，`document can not be folded` | 对文档块调用了 `block fold/unfold` | 换成标题块 / 列表块 |
 | `exitCode 2`，`缺少必填参数：--x, --y` | 参数缺失 | 一次性补齐列出的参数 |
+| `exitCode 2`，`--value 不是合法 JSON` | `av set-cell` 的 `--value` 传了裸字符串 | 改成合法 JSON 字符串并用单引号包裹 |
 | `exitCode 2`，`Invalid values: Argument: data-type` | 枚举值非法 | 用 `--help` 看可选值 |
 | SQL 查不到刚写入的内容 | 索引未完成 | 先执行 `siyuan sql flush` |
 | 发布模式下 `sql query` 被拒 | 该接口在发布模式禁止访问 | 换用其它接口 |

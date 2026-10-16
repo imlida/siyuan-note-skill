@@ -2,3 +2,9 @@ node_modules/
 dist/
 *.tgz
 .DS_Store
+
+# skill-up 评测运行产物（每次 run 生成的 iteration-N、报告等）
+skill/*-workspace/
+*-workspace/
+# 本地工作记忆
+.workbuddy/

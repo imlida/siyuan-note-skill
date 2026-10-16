@@ -1,0 +1,48 @@
+# skill-up 评测配置 schema 版本，请勿修改。
+schema_version: v1alpha1
+
+# 用例运行环境；CLI 直接作用于本机已启动的思源实例，不需要沙箱。
+# Options: none | opensandbox | docker.
+environment:
+  # Options: none | opensandbox | docker.
+  type: none
+
+# 被测Skill，路径相对 Skill 根目录（即 SKILL.md 所在目录）。
+skills:
+  # source options: local_path.
+  - source: local_path
+    # Path to the Skill under test, relative to this Skill root unless absolute.
+    path: .
+
+# 执行用例的Agent 引擎。
+engine:
+  # Built-in options: claude_code | codex | opencode | qodercli | qwen_code.
+  name: opencode
+  # 本机可用凭据为 DeepSeek（Anthropic 订阅与 ChatGPT Codex 均不可用）。
+  model:
+    provider: deepseek
+    name: deepseek-chat
+    base_url: https://api.deepseek.com/v1
+
+cases:
+  # 用例文件列表，相对 Skill 根目录。
+  files:
+    - evals/cases/doc-create-then-read-back.yaml
+    - evals/cases/block-lifecycle-pipe-id.yaml
+    - evals/cases/sql-search-with-flush.yaml
+    - evals/cases/attr-set-string-only.yaml
+    - evals/cases/exit-code-triage.yaml
+    - evals/cases/av-set-cell-value-shape.yaml
+    - evals/cases/av-add-key-required-params.yaml
+    - evals/cases/scope-refusal-routing.yaml
+  # 所有用例继承的默认约束。
+  defaults:
+    timeout_seconds: 300
+    max_turns: 20
+  # 用例无相互状态依赖，可并行。
+  parallelism: 3
+
+# 报告格式。
+report:
+  # Options: json | junit | html.
+  formats: [json]

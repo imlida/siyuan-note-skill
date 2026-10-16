@@ -1,0 +1,43 @@
+# 报告中的稳定用例 ID，与文件名保持一致。
+id: block-lifecycle-pipe-id
+# 这个用例验证什么。
+title: 追加块后从返回 JSON 管道取新块 ID 并完成更新
+# 背景：Skill 里最容易出错的一步是 block append 的返回结构是
+# [{"doOperations":[{"id":...}]}]，必须用 jq -r '.[0].doOperations[0].id' 才能拿到裸 ID。
+# 直接把返回值当ID 用会导致后续 update 全部失败。
+description: |
+  在真实思源实例上跑「建文档 → append 取 ID → update 改内容 → 读kramdown 确认」全链路，
+  最后由脚本直连思源 API 校验该块存在且内容确为更新后的文本。
+
+input:
+  # 发送给 Agent 的用户提示。
+  prompt: |
+    思源笔记跑在 http://127.0.0.1:6806，siyuan 命令行工具已装好。
+
+    请在思源里做这几步：
+    1. 新建一篇文档，人类可读路径 /skillup-eval-block-7Q2X，正文写「原始内容」。
+    2. 在这篇文档下面追加一个块，内容是「追加块内容-7Q2X」。
+    3. 从追加命令的返回结果里把新块的 ID 取出来，原样写进当前目录 new_block_id.txt。
+    4. 用这个 ID 把块内容改成「更新后内容-7Q2X」。
+    5. 再把这个块的 kramdown 源码读出来贴给我看，确认已经是更新后的内容。
+
+    麻烦真的跑一遍，不要只写命令。
+
+# 覆盖默认约束。
+constraints:
+  timeout_seconds: 300
+  max_turns: 20
+
+# 低成本前置门禁：ID 文件没产出就没必要再跑校验脚本。
+expect:
+  files_exist:
+    - new_block_id.txt
+
+judge:
+  # Grading strategy used to decide whether this case passes.
+  # Options: rule_based | agent_judge | script.
+  type: script
+  # 脚本从用例工作区根目录运行，退出码 0 表示 PASS。
+  # 它会校验 new_block_id.txt 的格式，并直连思源确认该块内容已是更新后的文本。
+  script_path: evals/fixtures/scripts/verify_block_updated.py
+  timeout_seconds: 60
