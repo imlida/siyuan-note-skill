@@ -1,9 +1,9 @@
-# siyuan-note-cli
+# @imlida/siyuan-note-cli
 
 思源笔记（SiYuan）API 的命令行客户端。把 [官方 API 文档](https://github.com/siyuan-note/siyuan/blob/master/docs/API.zh-CN.md) 中的**全部 80 个接口**逐个实现为子命令，面向脚本与 Agent 调用设计：结构化输出、明确的退出码、可注入的鉴权配置。
 
 ```bash
-npx siyuan-note-cli notebook ls
+npx @imlida/siyuan-note-cli notebook ls
 ```
 
 ---
@@ -20,10 +20,10 @@ npx siyuan-note-cli notebook ls
 
 ```bash
 # 免安装
-npx siyuan-note-cli system version --api-url http://127.0.0.1:6806
+npx @imlida/siyuan-note-cli system version --api-url http://127.0.0.1:6806
 
 # 全局安装（提供 siyuan 与 siyuan-note-cli 两个命令）
-npm install -g siyuan-note-cli
+npm install -g @imlida/siyuan-note-cli
 siyuan notebook ls
 
 # 本地开发
@@ -209,6 +209,38 @@ siyuan notify push --msg "同步完成" --timeout 5000
 - **非空即合法**：`id`、`path` 等参数的空字符串在某些接口里有语义（如 `av set-context-filter --key-id ""` 表示禁用），CLI 只校验"是否传入"，不校验非空。
 - **发布模式**：`/api/query/sql` 在思源发布模式下禁止访问。
 - **正向代理**：`network proxy` 为原样转发，上游非 2xx 也照常输出响应体且退出码为 0；`network ws` / `network es` 是长连接命令，需要 Ctrl-C 或对端关闭才结束。
+
+## 自动发布
+
+仓库配置了两个 GitHub Actions 工作流：
+
+| 工作流 | 触发时机 | 作用 |
+| --- | --- | --- |
+| `.github/workflows/ci.yml` | push / PR 到 main | Node 20 + 22 双版本跑 `npm run verify`：编译、生成对照表与示例、校验文档与实现一致，并检查 `docs/` 无漂移 |
+| `.github/workflows/publish.yml` | push 到 main 且改动了 `src/` `scripts/` `package.json` `package-lock.json` `tsconfig.json` `README.md`；也可手动触发 | 构建 → 定版本 → `npm publish` → 回写版本号并打 tag |
+
+**版本号规则**（由 `scripts/ci-version.mjs` 决定）：
+
+- `auto`（push 默认）：若 `package.json` 里的版本在 npm 上已存在，自动递增 patch 再发布；否则原样发布。
+- `patch` / `minor` / `major`：手动触发时强制递增。
+- `none`：绝不改版本号，版本已存在则本次跳过发布。
+
+发布成功后会把 `package.json` + `package-lock.json` 的版本变更提交回 main 并打 `vX.Y.Z` tag（用 `GITHUB_TOKEN` 推送，不会再次触发工作流，因此不会循环）。
+
+### 首次启用
+
+```bash
+# 在 npmjs.com → Access Tokens 生成 Automation 类型 token，然后：
+gh secret set NPM_TOKEN -b '<your-npm-token>'
+```
+
+`NPM_TOKEN` 未配置时，发布工作流会直接失败并在日志里给出上述命令，不会静默跳过。
+
+包名是 scoped 包 `@imlida/siyuan-note-cli`，`publishConfig.access` 已设为 `public`，install 时用：
+
+```bash
+npm i -g @imlida/siyuan-note-cli
+```
 
 ## 开发
 

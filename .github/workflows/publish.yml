@@ -1,0 +1,115 @@
+name: Publish to npm
+
+# 代码推到 main 即自动发版；也可在 Actions 页面手动触发并指定递增方式。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'README.md'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 版本号递增方式
+        type: choice
+        required: true
+        default: auto
+        options:
+          - auto    # 版本已存在时自动 +patch，否则原样发布
+          - patch
+          - minor
+          - major
+          - none    # 不改版本号；若已存在则本次不发版
+      dry_run:
+        description: 只做打包演练，不真正发布
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+# 同一分支上串行发布，避免并发推版本号互相踩
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: 构建 → 定版本 → 发布
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建与校验
+        run: npm run verify
+
+      - name: 检查 NPM_TOKEN 是否已配置
+        if: ${{ !inputs.dry_run }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error title=缺少 NPM_TOKEN::仓库未配置 NPM_TOKEN secret，无法发布。"
+            echo "::error title=修复方式::gh secret set NPM_TOKEN -b '<你的 npm Automation token>'"
+            exit 1
+          fi
+
+      - name: 决定版本号
+        id: ver
+        env:
+          BUMP: ${{ github.event.inputs.bump || 'auto' }}
+        run: node scripts/ci-version.mjs
+
+      - name: 发布到 npm
+        if: ${{ steps.ver.outputs.publish == 'true' && !inputs.dry_run }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
+
+      - name: 打包演练（不发布）
+        if: ${{ inputs.dry_run }}
+        run: npm publish --access public --dry-run
+
+      - name: 回写版本号并打 tag
+        if: ${{ steps.ver.outputs.changed == 'true' && !inputs.dry_run }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore(release): v${{ steps.ver.outputs.version }}"
+          git tag "v${{ steps.ver.outputs.version }}"
+          git push origin HEAD:${{ github.ref_name }} --follow-tags
+
+      - name: 结果摘要
+        env:
+          NAME: ${{ steps.ver.outputs.name }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          PUBLISH: ${{ steps.ver.outputs.publish }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          {
+            echo "### npm 发布结果"
+            echo ""
+            if [ "$DRY" = "true" ]; then
+              echo "演练模式：未真正发布。"
+            elif [ "$PUBLISH" != "true" ]; then
+              echo "版本已存在且 BUMP=none，已跳过发布。"
+            else
+              echo "已发布 \`$NAME@$VERSION\` — https://www.npmjs.com/package/$NAME"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

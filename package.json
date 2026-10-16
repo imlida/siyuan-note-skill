@@ -1,5 +1,5 @@
 {
-  "name": "siyuan-note-cli",
+  "name": "@imlida/siyuan-note-cli",
   "version": "0.1.0",
   "description": "思源笔记 API 命令行工具：按官方 API 文档逐接口实现子命令，支持 npx 运行、管道友好输出与 Agent 调用",
   "license": "MIT",
@@ -12,9 +12,14 @@
   },
   "files": [
     "dist",
-    "docs",
-    "README.md"
+    "README.md",
+    "docs/API-MAPPING.md",
+    "docs/EXAMPLES.md",
+    "docs/api-endpoints.txt"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.17"
   },
@@ -26,6 +31,14 @@
     "api",
     "b3log"
   ],
+  "homepage": "https://github.com/imlida/siyuan-note-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imlida/siyuan-note-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/imlida/siyuan-note-cli/issues"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/postbuild.mjs",
     "dev": "tsc -p tsconfig.json --watch",

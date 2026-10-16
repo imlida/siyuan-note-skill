@@ -1,6 +1,6 @@
 ---
 name: siyuan-note-cli
-description: 通过 siyuan-note-cli 命令行工具读写思源笔记（SiYuan）。当用户需要搜索/创建/更新/删除思源笔记的笔记本、文档、块、块属性，执行 SQL 查询，上传资源或导入导出文件，操作数据库（属性视图），发送通知，或把思源当作数据库/知识库后端来读写时使用。关键词：思源、SiYuan、siyuan、笔记 API、块 ID、笔记本 ID。
+description: 通过 @imlida/siyuan-note-cli（siyuan）命令行工具读写思源笔记（SiYuan）。当用户需要搜索/创建/更新/删除思源笔记的笔记本、文档、块、块属性，执行 SQL 查询，上传资源或导入导出文件，操作数据库（属性视图），发送通知，或把思源当作数据库/知识库后端来读写时使用。关键词：思源、SiYuan、siyuan、笔记 API、块 ID、笔记本 ID。
 version: 0.1.0
 license: MIT
 ---
@@ -33,7 +33,7 @@ license: MIT
 ## 前置条件
 
 1. 思源已启动且**开启 API 鉴权 token**（设置 - 鉴权 - API token）。
-2. 安装 CLI：`npm i -g siyuan-note-cli`（或 `npx siyuan-note-cli ...`）。命令名 `siyuan` 与 `siyuan-note-cli` 等价。
+2. 安装 CLI：`npm i -g @imlida/siyuan-note-cli`（或 `npx @imlida/siyuan-note-cli ...`）。命令名 `siyuan` 与 `siyuan-note-cli` 等价。
 3. 配置连接（优先级：命令行 > 环境变量 > 配置文件 > 默认 `http://127.0.0.1:6806`）：
 
 ```bash
