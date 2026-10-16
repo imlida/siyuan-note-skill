@@ -92,7 +92,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json package-lock.json
           git commit -m "chore(release): v${{ steps.ver.outputs.version }}"
-          git tag "v${{ steps.ver.outputs.version }}"
+          # 必须是 annotated tag：git push --follow-tags 只推 annotated tag，
+          # 轻量 tag 会被静默跳过，导致 tag 永远上不了远程
+          git tag -a "v${{ steps.ver.outputs.version }}" -m "v${{ steps.ver.outputs.version }}"
           git push origin HEAD:${{ github.ref_name }} --follow-tags
 
       - name: 结果摘要
