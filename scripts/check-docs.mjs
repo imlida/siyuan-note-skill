@@ -62,7 +62,9 @@ for (const rel of files) {
   }
 
   merged.forEach((line, i) => {
-    const m = /siyuan(?:-note-cli)?\s+([a-z][a-z0-9-]*)(?:\s+([a-z][a-z0-9-]*))?/g;
+    // 只匹配作为命令出现的 siyuan / siyuan-note-cli：
+    // 前面不能是 / @ 字母数字或 -，避免把 `@aigood/siyuan-note-cli` 这类包名误判成命令
+    const m = /(?<![/@\w-])siyuan(?:-note-cli)?\s+([a-z][a-z0-9-]*)(?:\s+([a-z][a-z0-9-]*))?/g;
     let hit;
     while ((hit = m.exec(line)) !== null) {
       const group = hit[1];
