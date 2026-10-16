@@ -1,0 +1,48 @@
+{
+  "name": "siyuan-note-cli",
+  "version": "0.1.0",
+  "description": "思源笔记 API 命令行工具：按官方 API 文档逐接口实现子命令，支持 npx 运行、管道友好输出与 Agent 调用",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "siyuan": "dist/index.js",
+    "siyuan-note-cli": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "keywords": [
+    "siyuan",
+    "siyuan-note",
+    "思源笔记",
+    "cli",
+    "api",
+    "b3log"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/postbuild.mjs",
+    "dev": "tsc -p tsconfig.json --watch",
+    "mapping": "node scripts/gen-mapping.mjs",
+    "examples": "node scripts/gen-examples.mjs",
+    "check-docs": "node scripts/check-docs.mjs",
+    "verify": "npm run build && npm run mapping && npm run examples && npm run check-docs",
+    "prepublishOnly": "npm run verify"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
+    "@types/yargs": "^17.0.33",
+    "typescript": "^5.7.2"
+  }
+}
